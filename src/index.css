@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 42 47% 97%;
+    --foreground: 195 25% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 195 25% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 195 25% 15%;
+
+    --primary: 184 65% 28%;
+    --primary-foreground: 42 100% 97%;
+
+    --secondary: 42 88% 65%;
+    --secondary-foreground: 195 25% 15%;
+
+    --muted: 42 30% 92%;
+    --muted-foreground: 195 15% 45%;
+
+    --accent: 184 45% 85%;
+    --accent-foreground: 195 25% 15%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 42 25% 88%;
+    --input: 42 25% 88%;
+    --ring: 184 65% 28%;
+
+    --radius: 0.75rem;
+
+    /* Register tag colors */
+    --tag-informal: 15 85% 65%;
+    --tag-neutral: 220 15% 55%;
+    --tag-formal: 220 65% 48%;
+    --tag-academic: 260 55% 55%;
+    --tag-literary: 280 45% 58%;
+    --tag-legal: 340 50% 50%;
+    --tag-business: 160 45% 48%;
+    --tag-journalism: 30 75% 58%;
+
+    /* Gradient backgrounds */
+    --gradient-hero: linear-gradient(135deg, hsl(184 65% 28%) 0%, hsl(184 55% 45%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(42 30% 98%) 100%);
+    
+    /* Shadows */
+    --shadow-sm: 0 2px 8px hsl(195 25% 15% / 0.08);
+    --shadow-md: 0 4px 16px hsl(195 25% 15% / 0.12);
+    --shadow-lg: 0 8px 24px hsl(195 25% 15% / 0.16);
+
+    /* Transitions */
+    --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 195 35% 8%;
+    --foreground: 42 45% 92%;
+
+    --card: 195 30% 12%;
+    --card-foreground: 42 45% 92%;
+
+    --popover: 195 30% 12%;
+    --popover-foreground: 42 45% 92%;
+
+    --primary: 184 65% 55%;
+    --primary-foreground: 195 35% 8%;
+
+    --secondary: 42 75% 58%;
+    --secondary-foreground: 195 35% 8%;
+
+    --muted: 195 25% 18%;
+    --muted-foreground: 42 25% 65%;
+
+    --accent: 184 35% 25%;
+    --accent-foreground: 42 45% 92%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 42 45% 92%;
+
+    --border: 195 25% 20%;
+    --input: 195 25% 20%;
+    --ring: 184 65% 55%;
+
+    --gradient-hero: linear-gradient(135deg, hsl(184 65% 55%) 0%, hsl(184 55% 65%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(195 30% 12%) 0%, hsl(195 25% 15%) 100%);
+    
+    --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 16px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 8px 24px hsl(0 0% 0% / 0.5);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "kern", "liga", "clig", "calt";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+  }
+}
+
+@layer utilities {
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+
+  .shadow-elegant {
+    box-shadow: var(--shadow-md);
+  }
+
+  .transition-smooth {
+    transition: var(--transition-base);
+  }
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
