@@ -41,21 +41,22 @@ export const VocabularyCard = ({ entry, onClick }: VocabularyCardProps) => {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              {entry.category && (
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              {entry.categories && entry.categories.length > 0 && entry.categories.map((cat) => (
                 <Badge
+                  key={cat.id}
                   variant="outline"
                   className="border"
                   style={{
-                    backgroundColor: `${entry.category.color}20`,
-                    borderColor: `${entry.category.color}50`,
-                    color: entry.category.color || undefined,
+                    backgroundColor: `${cat.color}20`,
+                    borderColor: `${cat.color}50`,
+                    color: cat.color || undefined,
                   }}
                 >
                   <FolderOpen className="w-3 h-3 mr-1" />
-                  {entry.category.name}
+                  {cat.name}
                 </Badge>
-              )}
+              ))}
             </div>
             <h3 className="text-2xl font-serif font-semibold text-foreground mb-1">
               {entry.word}
