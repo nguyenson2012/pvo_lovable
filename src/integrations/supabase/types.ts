@@ -79,10 +79,45 @@ export type Database = {
         }
         Relationships: []
       }
+      vocabulary_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          vocabulary_entry_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          vocabulary_entry_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          vocabulary_entry_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vocabulary_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vocabulary_categories_vocabulary_entry_id_fkey"
+            columns: ["vocabulary_entry_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vocabulary_entries: {
         Row: {
           attitude: string
-          category_id: string
           context: string | null
           created_at: string
           cultural_note: string | null
@@ -98,7 +133,6 @@ export type Database = {
         }
         Insert: {
           attitude: string
-          category_id: string
           context?: string | null
           created_at?: string
           cultural_note?: string | null
@@ -114,7 +148,6 @@ export type Database = {
         }
         Update: {
           attitude?: string
-          category_id?: string
           context?: string | null
           created_at?: string
           cultural_note?: string | null
@@ -128,15 +161,7 @@ export type Database = {
           user_id?: string
           word?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "vocabulary_entries_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {

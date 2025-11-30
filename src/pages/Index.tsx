@@ -71,7 +71,7 @@ const Index = () => {
 
     const matchesCategory =
       selectedCategories.length === 0 ||
-      selectedCategories.includes(entry.category_id);
+      entry.categories?.some(cat => selectedCategories.includes(cat.id));
 
     return matchesSearch && matchesFormality && matchesRegister && matchesCategory;
   });

@@ -12,12 +12,11 @@ export interface VocabularyEntry {
   specialized_registers: string[];
   attitude: string;
   dialect: string | null;
-  category_id: string;
-  category?: {
+  categories?: Array<{
     id: string;
     name: string;
     color: string | null;
-  };
+  }>;
   alternatives?: Array<{
     id: string;
     word: string;
@@ -32,10 +31,7 @@ export const useVocabulary = () => {
     queryFn: async () => {
       const { data: entries, error: entriesError } = await supabase
         .from("vocabulary_entries")
-        .select(`
-          *,
-          category:categories(id, name, color)
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (entriesError) throw entriesError;
@@ -46,8 +42,21 @@ export const useVocabulary = () => {
 
       if (altError) throw altError;
 
+      const { data: vocabCategories, error: vcError } = await supabase
+        .from("vocabulary_categories")
+        .select(`
+          vocabulary_entry_id,
+          category:categories(id, name, color)
+        `);
+
+      if (vcError) throw vcError;
+
       return entries.map((entry) => ({
         ...entry,
+        categories: vocabCategories
+          ?.filter((vc) => vc.vocabulary_entry_id === entry.id)
+          .map((vc) => vc.category)
+          .filter(Boolean) || [],
         alternatives: alternatives?.filter((alt) => alt.vocabulary_entry_id === entry.id) || [],
       })) as VocabularyEntry[];
     },

@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X } from "lucide-react";
+import { Plus, X, FolderOpen, Search } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PartOfSpeech, FormalityLevel, SpecializedRegister, Attitude, Dialect } from "@/types/vocabulary";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -34,7 +35,11 @@ export const AddVocabularyDialog = ({ entry, open: controlledOpen, onOpenChange 
   const [specializedRegisters, setSpecializedRegisters] = useState<SpecializedRegister[]>((entry?.specialized_registers as SpecializedRegister[]) || []);
   const [attitude, setAttitude] = useState<Attitude>((entry?.attitude as Attitude) || "neutral");
   const [dialect, setDialect] = useState<Dialect | undefined>((entry?.dialect as Dialect) || undefined);
-  const [categoryId, setCategoryId] = useState(entry?.category_id || "");
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
+    entry?.categories?.map(c => c.id) || []
+  );
+  const [categorySearchQuery, setCategorySearchQuery] = useState("");
+  const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false);
   const [alternatives, setAlternatives] = useState<Array<{ word: string; register: FormalityLevel; definition: string }>>(
     entry?.alternatives?.map(alt => ({ 
       word: alt.word, 
@@ -57,7 +62,7 @@ export const AddVocabularyDialog = ({ entry, open: controlledOpen, onOpenChange 
       setSpecializedRegisters((entry.specialized_registers as SpecializedRegister[]) || []);
       setAttitude(entry.attitude as Attitude);
       setDialect((entry.dialect as Dialect) || undefined);
-      setCategoryId(entry.category_id);
+      setSelectedCategoryIds(entry.categories?.map(c => c.id) || []);
       setAlternatives(entry.alternatives?.map(alt => ({ 
         word: alt.word, 
         register: alt.register as FormalityLevel, 
@@ -111,7 +116,7 @@ export const AddVocabularyDialog = ({ entry, open: controlledOpen, onOpenChange 
         title: "Category created",
         description: "Your category has been created successfully.",
       });
-      setCategoryId(data.id); // Auto-select the new category
+      setSelectedCategoryIds([...selectedCategoryIds, data.id]); // Auto-select the new category
       setNewCategoryName("");
       setNewCategoryDescription("");
       setNewCategoryColor("#0EA5E9");
@@ -136,7 +141,6 @@ export const AddVocabularyDialog = ({ entry, open: controlledOpen, onOpenChange 
         const { error: updateError } = await supabase
           .from("vocabulary_entries")
           .update({
-            category_id: categoryId,
             word,
             definition,
             part_of_speech: partOfSpeech,
@@ -150,6 +154,22 @@ export const AddVocabularyDialog = ({ entry, open: controlledOpen, onOpenChange 
           .eq("id", entry.id);
 
         if (updateError) throw updateError;
+
+        // Delete old category relationships
+        await supabase.from("vocabulary_categories").delete().eq("vocabulary_entry_id", entry.id);
+
+        // Insert new category relationships
+        if (selectedCategoryIds.length > 0) {
+          const { error: catError } = await supabase
+            .from("vocabulary_categories")
+            .insert(
+              selectedCategoryIds.map((catId) => ({
+                vocabulary_entry_id: entry.id,
+                category_id: catId,
+              }))
+            );
+          if (catError) throw catError;
+        }
 
         // Delete old alternatives
         await supabase.from("alternative_words").delete().eq("vocabulary_entry_id", entry.id);
@@ -176,7 +196,6 @@ export const AddVocabularyDialog = ({ entry, open: controlledOpen, onOpenChange 
           .from("vocabulary_entries")
           .insert([{
             user_id: user.id,
-            category_id: categoryId,
             word,
             definition,
             part_of_speech: partOfSpeech,
@@ -192,6 +211,20 @@ export const AddVocabularyDialog = ({ entry, open: controlledOpen, onOpenChange 
 
         if (entryError) throw entryError;
 
+        // Insert category relationships
+        if (selectedCategoryIds.length > 0) {
+          const { error: catError } = await supabase
+            .from("vocabulary_categories")
+            .insert(
+              selectedCategoryIds.map((catId) => ({
+                vocabulary_entry_id: newEntry.id,
+                category_id: catId,
+              }))
+            );
+          if (catError) throw catError;
+        }
+
+        // Insert alternatives
         if (alternatives.length > 0) {
           const { error: altError } = await supabase
             .from("alternative_words")
@@ -228,7 +261,7 @@ export const AddVocabularyDialog = ({ entry, open: controlledOpen, onOpenChange 
         setSpecializedRegisters([]);
         setAttitude("neutral");
         setDialect(undefined);
-        setCategoryId("");
+        setSelectedCategoryIds([]);
         setAlternatives([]);
       }
       
@@ -252,10 +285,10 @@ export const AddVocabularyDialog = ({ entry, open: controlledOpen, onOpenChange 
       });
       return;
     }
-    if (!categoryId) {
+    if (selectedCategoryIds.length === 0) {
       toast({
         title: "Category required",
-        description: "Please select a category for this entry.",
+        description: "Please select at least one category for this entry.",
         variant: "destructive",
       });
       return;
@@ -322,36 +355,99 @@ export const AddVocabularyDialog = ({ entry, open: controlledOpen, onOpenChange 
         
         <div className="space-y-6 py-4">
           {/* Category Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="category">Category *</Label>
-            <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat: any) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: cat.color || "#0EA5E9" }}
-                      />
+          <div className="space-y-3">
+            <Label>Categories * (Select one or more)</Label>
+            <div className="space-y-2">
+              {/* Selected Categories */}
+              <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-accent/20 min-h-[3rem]">
+                {selectedCategoryIds.length === 0 && (
+                  <span className="text-sm text-muted-foreground">No categories selected</span>
+                )}
+                {selectedCategoryIds.map((catId) => {
+                  const cat = categories.find((c: any) => c.id === catId);
+                  if (!cat) return null;
+                  return (
+                    <Badge
+                      key={cat.id}
+                      variant="default"
+                      className="cursor-pointer transition-smooth hover:scale-105"
+                      style={{ backgroundColor: cat.color || undefined }}
+                      onClick={() => {
+                        setSelectedCategoryIds(prev => prev.filter(id => id !== catId));
+                      }}
+                    >
+                      <FolderOpen className="w-3 h-3 mr-1" />
                       {cat.name}
+                      <X className="w-3 h-3 ml-1" />
+                    </Badge>
+                  );
+                })}
+              </div>
+              
+              {/* Add Category Popover */}
+              <div className="flex gap-2">
+                <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                      <Search className="w-4 h-4 mr-2" />
+                      Add Category
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0" align="start">
+                    <div className="p-2">
+                      <Input
+                        placeholder="Search categories..."
+                        value={categorySearchQuery}
+                        onChange={(e) => setCategorySearchQuery(e.target.value)}
+                        className="mb-2"
+                      />
                     </div>
-                  </SelectItem>
-                ))}
-                <div 
-                  className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground border-t mt-1"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setCategoryDialogOpen(true);
-                  }}
+                    <div className="max-h-60 overflow-y-auto p-2 space-y-1">
+                      {categories
+                        .filter((cat: any) => 
+                          !selectedCategoryIds.includes(cat.id) &&
+                          (cat.name.toLowerCase().includes(categorySearchQuery.toLowerCase()) ||
+                          (cat.description && cat.description.toLowerCase().includes(categorySearchQuery.toLowerCase())))
+                        )
+                        .map((cat: any) => (
+                          <div
+                            key={cat.id}
+                            className="flex items-center gap-2 p-2 hover:bg-accent rounded cursor-pointer transition-smooth"
+                            onClick={() => {
+                              setSelectedCategoryIds(prev => [...prev, cat.id]);
+                              setCategorySearchQuery("");
+                              setCategoryPopoverOpen(false);
+                            }}
+                          >
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: cat.color || undefined }}
+                            />
+                            <span className="text-sm flex-1">{cat.name}</span>
+                          </div>
+                        ))}
+                      {categories.filter((cat: any) => 
+                        !selectedCategoryIds.includes(cat.id) &&
+                        (cat.name.toLowerCase().includes(categorySearchQuery.toLowerCase()) ||
+                        (cat.description && cat.description.toLowerCase().includes(categorySearchQuery.toLowerCase())))
+                      ).length === 0 && (
+                        <div className="text-sm text-muted-foreground text-center py-4">
+                          No categories found
+                        </div>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => setCategoryDialogOpen(true)}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Create New Category
-                </div>
-              </SelectContent>
-            </Select>
+                  Create New
+                </Button>
+              </div>
+            </div>
           </div>
 
           {/* New Category Dialog */}
@@ -617,7 +713,7 @@ export const AddVocabularyDialog = ({ entry, open: controlledOpen, onOpenChange 
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={saveMutation.isPending || !word || !definition || !categoryId}
+              disabled={saveMutation.isPending || !word || !definition || selectedCategoryIds.length === 0}
               className="gradient-hero text-primary-foreground"
             >
               {saveMutation.isPending 
