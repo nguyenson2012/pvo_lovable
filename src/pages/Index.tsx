@@ -11,6 +11,7 @@ import { Auth } from "@/components/Auth";
 import { useVocabulary, VocabularyEntry } from "@/hooks/useVocabulary";
 import { FormalityLevel, SpecializedRegister } from "@/types/vocabulary";
 import { BookOpen, TrendingUp, Filter, LogOut, FolderOpen } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const [user, setUser] = useState<any>(null);
@@ -100,10 +101,15 @@ const Index = () => {
                 }}
               />
             </div>
-            <Button variant="outline" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="link" asChild>
+                <Link to="/about">About</Link>
+              </Button>
+              <Button variant="outline" onClick={handleSignOut}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
           <p className="text-xl text-muted-foreground">
             Master vocabulary through tone, register, and context
